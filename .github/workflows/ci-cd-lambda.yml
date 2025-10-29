@@ -1,4 +1,4 @@
-name: CI/CD - Deploy AWS Lambda (Java)
+name: CI/CD - AWS Lambda Java (develop)
 
 on:
   push:
@@ -6,41 +6,65 @@ on:
       - develop
   workflow_dispatch:
 
+env:
+  FUNCTION_NAME: lambda
+  AWS_REGION: us-east-2
+  ARTIFACT_NAME: serverless-lambda.jar
+  BUILD_DIR: target
+  ZIP_FILE: lambda-package.zip
+
 jobs:
   build:
-    name: Build Serverless Java Lambda
+    name: Build Java Lambda
     runs-on: ubuntu-latest
 
     steps:
       # 1️⃣ Checkout do código
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2️⃣ Configurar JDK 21 (ou versão que você usa)
+      # 2️⃣ Configurar JDK 21 (ajuste se usar outra versão)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 3️⃣ Compilar e empacotar com Maven
+      # 3️⃣ Compilar com Maven
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-  deploy-lambda:
-    name: Deploy Java Lambda
-    runs-on: ubuntu-latest
-    needs: build
+      # 4️⃣ Empacotar o artefato em .zip (necessário para Lambda)
+      - name: Package Lambda
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          zip -j ../${{ env.ZIP_FILE }} ${{ env.ARTIFACT_NAME }}
+          cd ..
 
-    env:
-      FUNCTION_NAME: lambda
-      AWS_REGION: us-east-2
-      ARTIFACT_NAME: serverless-lambda.jar
-      BUILD_DIR: target
+      # 5️⃣ Upload do artefato gerado (para ser usado no próximo job)
+      - name: Upload Lambda package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: ${{ env.ZIP_FILE }}
+
+  # ----------------------------------------------------
+  # 2️⃣ JOB: Deploy - faz upload para a AWS Lambda
+  # ----------------------------------------------------
+  deploy:
+    name: Deploy to AWS Lambda
+    runs-on: ubuntu-latest
+    needs: build   # ⏳ só roda depois do build
+    environment: develop
 
     steps:
+      # 1️⃣ Baixar o artefato do job anterior
+      - name: Download Lambda package
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
 
-      # 4️⃣ Configurar credenciais AWS
+      # 2️⃣ Configurar credenciais da AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,20 +72,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 5️⃣ Fazer deploy na Lambda
-      - name: Deploy to AWS Lambda
+      # 3️⃣ Fazer deploy na função Lambda
+      - name: Update AWS Lambda function
         run: |
-          ZIP_FILE=lambda-package.zip
-          cd ${{ env.BUILD_DIR }}
-          # compacta o JAR em um zip compatível com Lambda
-          zip -j ../$ZIP_FILE ${{ env.ARTIFACT_NAME }}
-          cd ..
-
-          # Atualiza o código da função Lambda
           aws lambda update-function-code \
             --function-name ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://$ZIP_FILE
+            --zip-file fileb://lambda-package.zip
 
-      # ✅ (Opcional) Verificar se o deploy foi bem-sucedido
+      # ✅ (opcional) Confirmar o deploy
       - name: Verify deployment
         run: aws lambda get-function --function-name ${{ env.FUNCTION_NAME }}
