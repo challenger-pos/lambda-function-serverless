@@ -1,0 +1,66 @@
+name: CI/CD - Deploy AWS Lambda (Java)
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Serverless Java Lambda
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout do código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configurar JDK 21 (ou versão que você usa)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # 3️⃣ Compilar e empacotar com Maven
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+  deploy-lambda:
+    name: Deploy Java Lambda
+    runs-on: ubuntu-latest
+
+    env:
+      FUNCTION_NAME: lambda
+      AWS_REGION: us-east-2
+      ARTIFACT_NAME: serverless-lambda.jar
+      BUILD_DIR: target
+
+    steps:
+
+      # 4️⃣ Configurar credenciais AWS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 5️⃣ Fazer deploy na Lambda
+      - name: Deploy to AWS Lambda
+        run: |
+          ZIP_FILE=lambda-package.zip
+          cd ${{ env.BUILD_DIR }}
+          # compacta o JAR em um zip compatível com Lambda
+          zip -j ../$ZIP_FILE ${{ env.ARTIFACT_NAME }}
+          cd ..
+
+          # Atualiza o código da função Lambda
+          aws lambda update-function-code \
+            --function-name ${{ env.FUNCTION_NAME }} \
+            --zip-file fileb://$ZIP_FILE
+
+      # ✅ (Opcional) Verificar se o deploy foi bem-sucedido
+      - name: Verify deployment
+        run: aws lambda get-function --function-name ${{ env.FUNCTION_NAME }}
