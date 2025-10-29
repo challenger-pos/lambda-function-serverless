@@ -31,7 +31,7 @@
             <artifactId>aws-lambda-java-events</artifactId>
             <version>${aws-lambda-java-events.version}</version>
         </dependency>
-        <!-- AWS LAMBDA -->
+        <!-- AWS LAMBDA  -->
 
         <!-- JACKSON -->
         <dependency>
