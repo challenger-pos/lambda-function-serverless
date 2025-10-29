@@ -35,18 +35,11 @@ jobs:
         run: mvn clean package -DskipTests
 
       # 4️⃣ Empacotar o artefato em .zip (necessário para Lambda)
-      - name: Package Lambda
-        run: |
-          cd ${{ env.BUILD_DIR }}
-          zip -j ../${{ env.ZIP_FILE }} ${{ env.ARTIFACT_NAME }}
-          cd ..
-
-      # 5️⃣ Upload do artefato gerado (para ser usado no próximo job)
-      - name: Upload Lambda package
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lambda-package
-          path: ${{ env.ZIP_FILE }}
+          name: lambda-jar
+          path: ${{ env.BUILD_DIR }}/${{ env.ARTIFACT_NAME }}
 
   # ----------------------------------------------------
   # 2️⃣ JOB: Deploy - faz upload para a AWS Lambda
@@ -62,7 +55,7 @@ jobs:
       - name: Download Lambda package
         uses: actions/download-artifact@v4
         with:
-          name: lambda-package
+          name: lambda-jar
 
       # 2️⃣ Configurar credenciais da AWS
       - name: Configure AWS credentials
@@ -77,7 +70,7 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://lambda-package.zip
+            --zip-file fileb://${{ env.ARTIFACT_NAME }}
 
       # ✅ (opcional) Confirmar o deploy
       - name: Verify deployment
