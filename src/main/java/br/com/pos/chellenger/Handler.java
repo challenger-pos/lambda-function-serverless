@@ -17,7 +17,8 @@ public class Handler implements RequestHandler<APIGatewayProxyRequestEvent, APIG
                 .withStatusCode(200)
                 .withBody("""
                         {
-                            "sucesso": true
+                            "sucesso": true,
+                            "mensagem": "Lambda executada com sucesso!"
                         }
                         """)
                 .withIsBase64Encoded(false);
