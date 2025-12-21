@@ -1,4 +1,4 @@
-name: CI/CD - AWS Lambda Java (develop)
+name: CI/CD - Lambda Auth (Terraform)
 
 on:
   push:
@@ -7,57 +7,32 @@ on:
   workflow_dispatch:
 
 env:
-  FUNCTION_NAME: lambda
   AWS_REGION: us-east-2
-  ARTIFACT_NAME: serverless-lambda.jar
-  BUILD_DIR: target
-  ZIP_FILE: lambda-package.zip
 
 jobs:
-  build:
-    name: Build Java Lambda
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1️⃣ Checkout do código
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      # 2️⃣ Configurar JDK 21 (ajuste se usar outra versão)
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      # 3️⃣ Compilar com Maven
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
-
-      # 4️⃣ Empacotar o artefato em .zip (necessário para Lambda)
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-jar
-          path: ${{ env.BUILD_DIR }}/${{ env.ARTIFACT_NAME }}
-
-  # ----------------------------------------------------
-  # 2️⃣ JOB: Deploy - faz upload para a AWS Lambda
-  # ----------------------------------------------------
   deploy:
-    name: Deploy to AWS Lambda
+    name: Build and Deploy Lambda
     runs-on: ubuntu-latest
-    needs: build   # ⏳ só roda depois do build
     environment: develop
 
     steps:
-      # 1️⃣ Baixar o artefato do job anterior
-      - name: Download Lambda package
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-jar
+      # 1️⃣ Checkout
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      # 2️⃣ Configurar credenciais da AWS
+      # 2️⃣ Java
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # 3️⃣ Build da Lambda (gera o FAT JAR)
+      - name: Build Lambda
+        working-directory: DocumentAuthFunction
+        run: mvn clean package -DskipTests
+
+      # 4️⃣ Credenciais AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -65,13 +40,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3️⃣ Fazer deploy na função Lambda
-      - name: Update AWS Lambda function
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://${{ env.ARTIFACT_NAME }}
+      # 5️⃣ Terraform Init
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init
 
-      # ✅ (opcional) Confirmar o deploy
-      - name: Verify deployment
-        run: aws lambda get-function --function-name ${{ env.FUNCTION_NAME }}
+      # 6️⃣ Terraform Apply (cria/atualiza Lambda)
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve
