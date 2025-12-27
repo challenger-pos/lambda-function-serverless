@@ -42,3 +42,4 @@ build/
 .terraform/
 *.tfstate
 *.tfstate.backup
+*.tfvars
