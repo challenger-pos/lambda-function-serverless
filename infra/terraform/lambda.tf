@@ -23,7 +23,7 @@ resource "aws_lambda_function" "auth_lambda" {
       ENV       = var.environment
       DB_HOST   = data.terraform_remote_state.rds.outputs.rds_endpoint_host
       DB_NAME   = data.terraform_remote_state.rds.outputs.db_name
-      DB_USER   = var.db_user
+      DB_USER   = data.terraform_remote_state.rds.outputs.username
       DB_PASSWORD   = var.db_password
       DB_PORT   = "5432"
     }

@@ -8,10 +8,6 @@ variable "environment" {
   default = "develop"
 }
 
-variable "db_user" {
-  type = string
-}
-
 variable "db_password" {
   type      = string
   sensitive = true
