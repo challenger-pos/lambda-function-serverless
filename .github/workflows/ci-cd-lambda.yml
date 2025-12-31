@@ -53,7 +53,7 @@ jobs:
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init \
-          -backend-config="key=lambda/${env.ENVIRONMENT}/terraform.tfstate"
+          -backend-config="key=lambda/${ENVIRONMENT}/terraform.tfstate"
 
       # 7️⃣ Terraform Apply (cria/atualiza Lambda)
       - name: Terraform Apply
