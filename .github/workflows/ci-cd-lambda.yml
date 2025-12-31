@@ -42,12 +42,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 5️⃣ Terraform Init
+      # 5️⃣ Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.7
+
+      # 6️⃣ Terraform Init
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init
 
-      # 6️⃣ Terraform Apply (cria/atualiza Lambda)
+      # 7️⃣ Terraform Apply (cria/atualiza Lambda)
       - name: Terraform Apply
         working-directory: infra/terraform
         run: terraform apply -auto-approve
