@@ -16,7 +16,7 @@ jobs:
   deploy:
     name: Build and Deploy Lambda
     runs-on: ubuntu-latest
-    environment: ${{ env.ENVIRONMENT }}
+    environment: ${{ github.ref_name == 'main' && 'production' || 'develop' }}
 
     steps:
       # 1️⃣ Checkout
