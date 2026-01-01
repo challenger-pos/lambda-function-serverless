@@ -6,10 +6,11 @@ public class DatabaseService implements CustomerStatusService  {
 
     private Connection getConnection() throws SQLException {
         String url = String.format(
-                "jdbc:postgresql://%s:%s/%s?ssl=false",
+                "jdbc:postgresql://%s:%s/%s?currentSchema=%s&ssl=false",
                 System.getenv("DB_HOST"),
                 System.getenv("DB_PORT"),
-                System.getenv("DB_NAME")
+                System.getenv("DB_NAME"),
+                System.getenv("DB_SCHEMA")
         );
         return DriverManager.getConnection(url, System.getenv("DB_USER"), System.getenv("DB_PASSWORD"));
     }
