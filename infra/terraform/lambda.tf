@@ -14,8 +14,10 @@ resource "aws_lambda_function" "auth_lambda" {
   memory_size = 512
 
   vpc_config {
-    subnet_ids         = data.terraform_remote_state.rds.outputs.subnet_ids
-    security_group_ids = [aws_security_group.lambda_sg.id]
+    # subnet_ids         = data.terraform_remote_state.rds.outputs.subnet_ids
+    //security_group_ids = [aws_security_group.lambda_sg.id]
+    subnet_ids         = data.terraform_remote_state.rds.outputs.private_subnet_ids
+    security_group_ids = [data.terraform_remote_state.rds.outputs.lambda_sg_id]
   }
 
   environment {
