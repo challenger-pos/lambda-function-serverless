@@ -10,16 +10,14 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ARTIFACT_NAME: serverless-lambda.jar
   ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
 
 jobs:
-  # ----------------------------------------------------
-  # 1️⃣ JOB: BUILD (Compila uma única vez)
-  # ----------------------------------------------------
-  build:
-    name: Build Java Artifact
+  deploy:
+    name: Build and Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -30,35 +28,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build with Maven
+      - name: Build with Maven (Gera o Fat JAR)
         working-directory: DocumentAuthFunction
         run: mvn clean package -DskipTests
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-jar
-          path: DocumentAuthFunction/target/${{ env.ARTIFACT_NAME }}
-
-  # ----------------------------------------------------
-  # 2️⃣ JOB: DEPLOY (Usa Terraform para aplicar as mudanças)
-  # ----------------------------------------------------
-  deploy:
-    name: Deploy to ${{ github.ref_name }}
-    needs: build
-    runs-on: ubuntu-latest
-    # Usa environments do GitHub para aprovação manual se necessário
-    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-jar
-          path: DocumentAuthFunction/target/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
