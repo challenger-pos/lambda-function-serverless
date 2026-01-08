@@ -1,40 +1,65 @@
-name: CI/CD - Lambda Auth (Terraform)
+name: CI/CD - AWS Lambda Java
 
 on:
   push:
     branches:
-      - develop
       - main
+      - homologation
+      - production
   workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2
-  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'develop' }}
+  ARTIFACT_NAME: serverless-lambda.jar
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
 
 jobs:
-  deploy:
-    name: Build and Deploy Lambda
+  # ----------------------------------------------------
+  # 1️⃣ JOB: BUILD (Compila uma única vez)
+  # ----------------------------------------------------
+  build:
+    name: Build Java Artifact
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'develop' }}
-
     steps:
-      # 1️⃣ Checkout
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2️⃣ Java
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      # 3️⃣ Build da Lambda (gera o FAT JAR)
-      - name: Build Lambda
+      - name: Build with Maven
         working-directory: DocumentAuthFunction
         run: mvn clean package -DskipTests
 
-      # 4️⃣ Credenciais AWS
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-jar
+          path: DocumentAuthFunction/target/${{ env.ARTIFACT_NAME }}
+
+  # ----------------------------------------------------
+  # 2️⃣ JOB: DEPLOY (Usa Terraform para aplicar as mudanças)
+  # ----------------------------------------------------
+  deploy:
+    name: Deploy to ${{ github.ref_name }}
+    needs: build
+    runs-on: ubuntu-latest
+    # Usa environments do GitHub para aprovação manual se necessário
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-jar
+          path: DocumentAuthFunction/target/
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -42,18 +67,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 5️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.7
 
-      # 6️⃣ Terraform Init
       - name: Terraform Init
         working-directory: infra/terraform
-        run: terraform init -backend-config="key=lambda/${ENVIRONMENT}/terraform.tfstate"
+        run: |
+          terraform init -backend-config="key=lambda/${{ env.ENVIRONMENT }}/terraform.tfstate"
 
-      # 7️⃣ Terraform Apply (cria/atualiza Lambda)
       - name: Terraform Apply
         working-directory: infra/terraform
         run: terraform apply -auto-approve
