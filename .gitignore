@@ -5,6 +5,8 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
+.idea
+.idea/
 .idea/*
 *.iws
 *.iml
@@ -34,3 +36,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+dependency-reduced-pom.xml

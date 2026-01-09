@@ -160,17 +160,3 @@ O repositório já contém um workflow em `.github/workflows/ci-cd-lambda.yml` q
 - Permissões: verifique o papel IAM e a attachment da policy `AWSLambdaBasicExecutionRole`.
 
 ---
-
-## ✅ Próximos passos sugeridos
-
-- Adicionar testes unitários e integração (mocks do runtime).
-- Incluir um workflow de Canary / Blue-Green se for crítico para produções.
-- Opcional: migrar para AWS SAM / Serverless Framework para definição declarativa e deploy mais simples.
-
----
-
-Se desejar, posso adicionar:
-- um exemplo de workflow de deploy (YAML) com *rolling deployment* (canary), ou
-- um script de bootstrap que cria a role IAM e faz o primeiro deploy com a AWS CLI.
-
-Escolha **"workflow"** ou **"bootstrap"** (ou ambos) e eu adiciono os arquivos. Boa revisão!

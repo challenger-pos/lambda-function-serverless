@@ -9,18 +9,14 @@ on:
   workflow_dispatch:
 
 env:
-  FUNCTION_NAME: lambda
   AWS_REGION: us-east-2
-  ARTIFACT_NAME: serverless-lambda.jar
-  BUILD_DIR: target
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
 
-# ----------------------------------------------------
-# 1️⃣ JOB: BUILD (roda para qualquer branch)
-# ----------------------------------------------------
 jobs:
-  build:
-    name: Build Java Lambda
+  deploy:
+    name: Build and Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
 
     steps:
       - name: Checkout source
@@ -30,35 +26,12 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: '21'
 
-      - name: Build with Maven
+      - name: Build with Maven (Gera o Fat JAR)
+        working-directory: DocumentAuthFunction
         run: mvn clean package -DskipTests
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-jar
-          path: ${{ env.BUILD_DIR }}/${{ env.ARTIFACT_NAME }}
-
-  # ----------------------------------------------------
-  # 2️⃣ DEPLOY MAIN (MANUAL)
-  # ----------------------------------------------------
-  deploy-main:
-    name: Deploy MAIN (manual approval)
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    environment:
-      name: main   # approval manual configurado no GitHub
-
-    steps:
-      - name: Download Lambda artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-jar
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -66,70 +39,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy Lambda (MAIN)
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.7
+
+      - name: Terraform Init
+        working-directory: infra/terraform
         run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://${{ env.ARTIFACT_NAME }}
+          terraform init -backend-config="key=lambda/${{ env.ENVIRONMENT }}/terraform.tfstate"
 
-  # ----------------------------------------------------
-  # 3️⃣ DEPLOY HOMOLOGATION (AUTOMÁTICO)
-  # ----------------------------------------------------
-  deploy-homologation:
-    name: Deploy HOMOLOGATION (automatic)
-    needs: build
-    if: github.ref == 'refs/heads/homologation'
-    runs-on: ubuntu-latest
-
-    environment:
-      name: homologation
-
-    steps:
-      - name: Download Lambda artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-jar
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy Lambda (HOMOLOGATION)
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.FUNCTION_NAME }}-homologation \
-            --zip-file fileb://${{ env.ARTIFACT_NAME }}
-
-  # ----------------------------------------------------
-  # 4️⃣ DEPLOY PRODUCTION (AUTOMÁTICO)
-  # ----------------------------------------------------
-  deploy-production:
-    name: Deploy PRODUCTION (automatic)
-    needs: build
-    if: github.ref == 'refs/heads/production'
-    runs-on: ubuntu-latest
-
-    environment:
-      name: production
-
-    steps:
-      - name: Download Lambda artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-jar
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy Lambda (PRODUCTION)
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.FUNCTION_NAME }}-production \
-            --zip-file fileb://${{ env.ARTIFACT_NAME }}
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
