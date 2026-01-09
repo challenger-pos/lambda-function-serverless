@@ -5,18 +5,17 @@ on:
     branches:
       - main
       - homologation
-      - 'feature/**'
   workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2
-  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'homologation' }}
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
 
 jobs:
   deploy:
     name: Build and Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'homologation' }}
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
 
     steps:
       - name: Checkout source
