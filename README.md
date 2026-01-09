@@ -4,6 +4,16 @@ Este projeto contém uma função AWS Lambda escrita em **Java 21** para process
 
 ---
 
+## 🔑 Regras de Negócio e Autenticação
+
+A função Lambda é responsável pela autenticação do cliente com base em seu documento:
+
+1. **Validação:** O sistema verifica se o documento informado existe e se o cliente está com o status **Ativo** na base de dados.
+2. **Token JWT:** Caso a validação seja bem-sucedida, a Lambda retorna um **JWT (JSON Web Token)**.
+3. **Fluxo Seguinte:** Este token deve ser utilizado obrigatoriamente para autenticar as chamadas nos endpoints de **Aceite** ou **Recusa** da Ordem de Serviço.
+
+---
+
 ## 🛡️ Regras do Repositório (Desafio)
 
 - **Branch main:** Protegida. Commits diretos são proibidos; o uso de Pull Requests é obrigatório.
