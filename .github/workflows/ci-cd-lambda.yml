@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - homologation
+      - 'feature/**'
   workflow_dispatch:
 
 env:
