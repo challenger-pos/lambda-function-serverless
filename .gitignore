@@ -42,3 +42,5 @@ build/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+dependency-reduced-pom.xml
