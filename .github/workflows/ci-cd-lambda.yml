@@ -9,13 +9,13 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'homologation' }}
 
 jobs:
   deploy:
     name: Build and Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    environment: ${{ github.ref_name == 'main' && 'production' || 'homologation' }}
 
     steps:
       - name: Checkout source
