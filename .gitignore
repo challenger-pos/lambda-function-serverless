@@ -6,6 +6,7 @@ target/
 
 ### IntelliJ IDEA ###
 .idea
+.idea/
 .idea/*
 *.iws
 *.iml
@@ -41,3 +42,5 @@ build/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+dependency-reduced-pom.xml
