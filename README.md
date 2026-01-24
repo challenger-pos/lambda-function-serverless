@@ -14,6 +14,23 @@ A função Lambda é responsável pela autenticação do cliente com base em seu
 
 ---
 
+## 🧭 Diagrama da Arquitetura
+![Diagrama da Lambda de Autenticação](docs/diagrama-lambda.png)
+
+---
+
+## 🔁 CI/CD
+
+O deploy da infraestrutura (Terraform) e da função Lambda (Java) é realizado
+automaticamente via **GitHub Actions**, conforme a branch de destino:
+
+- `homologation` → Ambiente de Homologação
+- `main` → Ambiente de Produção
+
+🔗 Pipeline: https://github.com/challenger-pos/lambda-function-serverless/actions
+
+---
+
 ## 🛡️ Regras do Repositório (Desafio)
 
 - **Branch main:** Protegida. Commits diretos são proibidos; o uso de Pull Requests é obrigatório.
