@@ -69,8 +69,8 @@ O Maven gerará o arquivo final no diretório `DocumentAuthFunction/target/`.
 Você pode simular o que a pipeline fará localmente:
 
 1. Acesse a pasta: `cd infra/terraform`
-2. Inicialize: `terraform init -backend-config="key=lambda/develop/terraform.tfstate"`
-3. Planeje: `terraform plan -var="environment=develop" -var="aws_region=us-east-2" -var="db_password=SUA_SENHA"`
+2. Inicialize: `terraform init -backend-config="key=v4/lambda/dev/terraform.tfstate"`
+3. Planeje: `terraform plan -var="environment=dev" -var="aws_region=us-east-2" -var="db_password=SUA_SENHA"`
 
 ---
 
