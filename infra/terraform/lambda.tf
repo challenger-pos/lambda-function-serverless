@@ -14,8 +14,8 @@ resource "aws_lambda_function" "auth_lambda" {
   memory_size = 512
 
   vpc_config {
-    subnet_ids         = data.terraform_remote_state.rds.outputs.private_subnet_ids
-    security_group_ids = [data.terraform_remote_state.rds.outputs.lambda_sg_id]
+    subnet_ids         = data.terraform_remote_state.networking.outputs.private_app_subnet_ids
+    security_group_ids = [data.terraform_remote_state.rds.outputs.lambda_security_group_id ]
   }
 
   environment {
@@ -26,7 +26,7 @@ resource "aws_lambda_function" "auth_lambda" {
       DB_NAME   = data.terraform_remote_state.rds.outputs.db_name
       DB_USER   = data.terraform_remote_state.rds.outputs.db_username
       DB_PASSWORD   = var.db_password
-      DB_PORT   = data.terraform_remote_state.rds.outputs.db_port
+      DB_PORT   = data.terraform_remote_state.rds.outputs.rds_port
     }
   }
 }

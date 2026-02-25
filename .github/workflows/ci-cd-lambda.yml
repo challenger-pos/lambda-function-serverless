@@ -9,13 +9,13 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'dev') }}
 
 jobs:
   deploy:
     name: Build and Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    environment: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
 
     steps:
       - name: Checkout source
@@ -46,7 +46,7 @@ jobs:
       - name: Terraform Init
         working-directory: infra/terraform
         run: |
-          terraform init -backend-config="key=lambda/${{ env.ENVIRONMENT }}/terraform.tfstate"
+          terraform init -backend-config="key=v4/lambda/${{ env.ENVIRONMENT }}/terraform.tfstate"
 
       - name: Terraform Apply
         working-directory: infra/terraform
